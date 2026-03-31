@@ -1,14 +1,14 @@
 import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
-  // POST 요청이 아니면 거절
+  // 1. POST 요청만 허용
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   const { name, email, phone, date, type, vision } = req.body;
 
-  // 이메일 전송 설정 (환경변수 사용)
+  // 2. 이메일 전송 설정
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -18,9 +18,11 @@ export default async function handler(req, res) {
   });
 
   try {
+    // 3. 실제 메일 발송
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: 'cwhirlow@gmail.com', // 실제 메일을 받을 주소
+      to: 'cwwhirlow@gmail.com', // 셰프님이 알림을 받을 메일
+      replyTo: 'chris@chriswhirlow.com', // 셰프님이 답장 버튼 눌렀을 때 갈 주소
       subject: `New Inquiry from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nDate: ${date}\nEvent Type: ${type}\nVision: ${vision}`,
     });
