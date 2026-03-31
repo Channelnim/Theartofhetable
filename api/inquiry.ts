@@ -20,9 +20,10 @@ export default async function handler(req, res) {
   try {
     // 3. 실제 메일 발송
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: 'cwhirlow@gmail.com', // 셰프님이 알림을 받을 메일
-      replyTo: 'chris@chriswhirlow.com', // 셰프님이 답장 버튼 눌렀을 때 갈 주소
+      // 보낸 사람 이름을 설정 (답장 주소와는 별개)
+      from: `"Chef Chris" <${process.env.EMAIL_USER}>`, 
+      to: 'cwhirlow@gmail.com', 
+      replyTo: 'chris@chriswhirlow.com', // 셰프님이 답장 누를 때 연결될 주소
       subject: `New Inquiry from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nDate: ${date}\nEvent Type: ${type}\nVision: ${vision}`,
     });
