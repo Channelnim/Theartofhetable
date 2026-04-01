@@ -123,11 +123,24 @@ const Navbar = () => {
   }, []);
 
   const scrollTo = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
     setIsMobileMenuOpen(false);
+    
+    // 메뉴가 닫히는 애니메이션이 스크롤을 방해하지 않도록 약간의 지연 시간을 둡니다.
+    setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        const offset = 80; // 고정된 상단 바의 높이 (오프셋)
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = element.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 300);
   };
 
   const navItemClass = (scrolled: boolean) => `text-[10px] uppercase tracking-[0.5em] font-medium hover:opacity-50 transition-opacity ${scrolled ? 'text-black' : 'text-white'}`;
