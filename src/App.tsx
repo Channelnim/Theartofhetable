@@ -122,15 +122,28 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 이동 후 메뉴를 닫고 스크롤 잠금을 해제하는 함수
+  // 이동 로직 강화
   const scrollTo = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    // 메뉴 닫기 및 스크롤 잠금 해제
+    // 1. 메뉴 닫기 및 스크롤 잠금 즉시 해제
     setIsMobileMenuOpen(false);
     document.body.style.overflow = 'unset';
+
+    // 2. 약간의 시간차를 두어 메뉴가 닫힌 후 이동하게 함 (모바일 충돌 방지)
+    setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        const offset = 80; // 상단 바 높이만큼 여백
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = element.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
   };
 
   const navItemClass = (scrolled: boolean) => `text-[10px] uppercase tracking-[0.5em] font-medium hover:opacity-50 transition-opacity ${scrolled ? 'text-black' : 'text-white'}`;
@@ -145,11 +158,7 @@ const Navbar = () => {
         
         <div className="flex-shrink-0 text-center">
           <button 
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              setIsMobileMenuOpen(false);
-              document.body.style.overflow = 'unset';
-            }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="group focus:outline-none"
           >
             <h1 className={`text-xl md:text-2xl font-serif tracking-[0.2em] uppercase transition-all duration-700 ${isScrolled ? 'text-black' : 'text-white'} group-hover:opacity-60`}>
@@ -162,11 +171,12 @@ const Navbar = () => {
         </div>
 
         <div className="flex-1 hidden md:flex justify-end items-center">
+          {/* ✨ 물결 애니메이션(btn-wavy) 클래스 다시 추가 */}
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => scrollTo('inquiry')} 
-            className={`relative overflow-hidden ${navItemClass(isScrolled)} px-6 py-2.5 border ${isScrolled ? 'border-black/20' : 'border-white/30'} rounded-full transition-all duration-500`}
+            className={`btn-wavy relative overflow-hidden ${navItemClass(isScrolled)} px-8 py-3 border ${isScrolled ? 'border-black/20 text-black' : 'border-white/30 text-white'} rounded-full`}
           >
             <span className="relative z-10">Inquiry</span>
           </motion.button>
@@ -187,14 +197,14 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 w-full bg-white border-t border-black/5 py-10 px-6 flex flex-col gap-8 md:hidden shadow-2xl overflow-hidden"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-full left-0 w-full bg-white border-t border-black/5 py-12 px-6 flex flex-col gap-10 md:hidden shadow-2xl"
           >
-            <button onClick={() => scrollTo('thechef')} className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center py-2">The Chef</button>
-            <button onClick={() => scrollTo('experiences')} className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center py-2">Experiences</button>
-            <button onClick={() => scrollTo('inquiry')} className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center py-2">Inquiry</button>
+            <button onClick={() => scrollTo('thechef')} className="text-[11px] uppercase tracking-[0.5em] font-bold text-black">The Chef</button>
+            <button onClick={() => scrollTo('experiences')} className="text-[11px] uppercase tracking-[0.5em] font-bold text-black">Experiences</button>
+            <button onClick={() => scrollTo('inquiry')} className="text-[11px] uppercase tracking-[0.5em] font-bold text-black">Inquiry</button>
           </motion.div>
         )}
       </AnimatePresence>
