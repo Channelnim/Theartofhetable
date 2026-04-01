@@ -460,7 +460,8 @@ const ExperienceCard = ({ category, index }: { category: typeof EVENT_CATEGORIES
 
 const InquirySection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  // 'idle' | 'success' | 'error' 세 가지 상태로 관리
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -483,30 +484,35 @@ const InquirySection = () => {
       return;
     }
     
-    // 이 부분을 추가하여 새로운 전송 시작 시 이전 상태를 초기화합니다.
-    setIsSubmitted(false);
+    const formData = new FormData(form);
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      date: format(selectedDate, 'PPP'),
+      type: formData.get('type'),
+      vision: formData.get('vision')
+    };
+
     setIsSubmitting(true);
+    setSubmitStatus('idle'); // 상태 초기화
     
     try {
       const response = await fetch('/api/inquiry', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send inquiry');
-      }
+      if (!response.ok) throw new Error('Failed');
 
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      e.currentTarget.reset();
+      setSubmitStatus('success');
+      form.reset();
       setSelectedDate(undefined);
     } catch (error) {
       console.error("Error submitting inquiry:", error);
-      alert("There was an error sending your inquiry. Please try again later.");
+      setSubmitStatus('error');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -524,107 +530,46 @@ const InquirySection = () => {
 
         <Reveal delay={0.2}>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* ... (기존 폼 입력 필드들은 동일하게 유지) ... */}
             <div className="space-y-4">
               <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/40 ml-1">Full Name</label>
-              <input 
-                required
-                name="name"
-                type="text" 
-                placeholder="E.g. Julianne Moore"
-                className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 focus:bg-white/10"
-              />
+              <input required name="name" type="text" placeholder="E.g. Julianne Moore" className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 focus:bg-white/10" />
             </div>
-
             <div className="space-y-4">
               <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/40 ml-1">Email Address</label>
-              <input 
-                required
-                name="email"
-                type="email" 
-                placeholder="E.g. julianne@example.com"
-                className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 focus:bg-white/10"
-              />
+              <input required name="email" type="email" placeholder="E.g. julianne@example.com" className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 focus:bg-white/10" />
             </div>
-
             <div className="space-y-4">
               <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/40 ml-1">Phone Number</label>
-              <input 
-                required
-                name="phone"
-                type="tel" 
-                placeholder="E.g. +1 (555) 000-0000"
-                className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 focus:bg-white/10"
-              />
+              <input required name="phone" type="tel" placeholder="E.g. +1 (555) 000-0000" className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 focus:bg-white/10" />
             </div>
-            
             <div className="space-y-4 relative" ref={calendarRef}>
               <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/40 ml-1">Event Date</label>
-              <div 
-                onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-              >
-                <span className={selectedDate ? "text-white" : "text-white/20"}>
-                  {selectedDate ? format(selectedDate, 'PPP') : "Select a date"}
-                </span>
+              <div onClick={() => setIsCalendarOpen(!isCalendarOpen)} className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all">
+                <span className={selectedDate ? "text-white" : "text-white/20"}>{selectedDate ? format(selectedDate, 'PPP') : "Select a date"}</span>
                 <CalendarIcon size={14} className="text-white/30" />
               </div>
-
               <AnimatePresence>
                 {isCalendarOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute z-50 top-full left-0 mt-2 bg-neutral-900 border border-white/10 p-4 shadow-2xl rounded-sm"
-                  >
-                    <DayPicker
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        setSelectedDate(date);
-                        setIsCalendarOpen(false);
-                      }}
-                      className="text-white"
-                    />
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute z-50 top-full left-0 mt-2 bg-neutral-900 border border-white/10 p-4 shadow-2xl rounded-sm">
+                    <DayPicker mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); setIsCalendarOpen(false); }} className="text-white" />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
             <div className="md:col-span-2 space-y-4">
               <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/40 ml-1">Event Type</label>
-              <select 
-                required
-                name="type"
-                defaultValue=""
-                className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all appearance-none cursor-pointer focus:bg-white/10"
-              >
+              <select required name="type" defaultValue="" className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all appearance-none cursor-pointer focus:bg-white/10">
                 <option value="" disabled className="bg-neutral-900">Select an experience</option>
-                {EVENT_TYPES.map(type => (
-                  <option key={type} value={type} className="bg-neutral-900">{type}</option>
-                ))}
+                {EVENT_TYPES.map(type => <option key={type} value={type} className="bg-neutral-900">{type}</option>)}
               </select>
             </div>
-
             <div className="md:col-span-2 space-y-4">
               <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/40 ml-1">Your Vision</label>
-              <textarea 
-                required
-                name="vision"
-                rows={6}
-                placeholder="Describe the atmosphere, dietary preferences, and your culinary aspirations..."
-                className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 resize-none focus:bg-white/10"
-              />
+              <textarea required name="vision" rows={6} placeholder="Describe the atmosphere, dietary preferences, and your culinary aspirations..." className="w-full bg-white/5 border border-white/10 px-8 py-6 text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 resize-none focus:bg-white/10" />
             </div>
-
             <div className="md:col-span-2 pt-8">
-              <motion.button 
-                disabled={isSubmitting}
-                whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-                whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-                type="submit"
-                className="w-full btn-wavy text-black py-7 text-[11px] uppercase tracking-[0.4em] font-bold transition-all flex items-center justify-center gap-5 group disabled:opacity-50"
-              >
+              <motion.button disabled={isSubmitting} whileHover={{ scale: isSubmitting ? 1 : 1.02 }} whileTap={{ scale: isSubmitting ? 1 : 0.98 }} type="submit" className="w-full btn-wavy text-black py-7 text-[11px] uppercase tracking-[0.4em] font-bold transition-all flex items-center justify-center gap-5 group disabled:opacity-50">
                 {isSubmitting ? "Sending..." : "Submit Inquiry"}
                 {!isSubmitting && <ArrowRight size={18} className="group-hover:translate-x-4 transition-transform" />}
               </motion.button>
@@ -633,55 +578,55 @@ const InquirySection = () => {
         </Reveal>
       </div>
 
-      {/* Success Modal */}
+      {/* 통합된 모달 창 (기존 애니메이션 유지) */}
       <AnimatePresence>
-        {isSubmitted && (
+        {submitStatus !== 'idle' && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsSubmitted(false)}
+              onClick={() => setSubmitStatus('idle')}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-neutral-900 border border-white/10 p-12 md:p-16 max-w-lg w-full text-center space-y-8 shadow-2xl"
+              className={`relative bg-neutral-900 border ${submitStatus === 'success' ? 'border-white/10' : 'border-red-500/20'} p-12 md:p-16 max-w-lg w-full text-center space-y-8 shadow-2xl`}
             >
-              <button 
-                onClick={() => setIsSubmitted(false)}
-                className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors"
-              >
+              <button onClick={() => setSubmitStatus('idle')} className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors">
                 <X size={24} />
               </button>
 
-              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                <motion.div
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                >
-                  <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </motion.div>
+              <div className={`w-20 h-20 ${submitStatus === 'success' ? 'bg-white/5' : 'bg-red-500/10'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                {submitStatus === 'success' ? (
+                  <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, delay: 0.2 }}>
+                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </motion.div>
+                ) : (
+                  <X size={40} className="text-red-500" />
+                )}
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-3xl md:text-4xl font-serif tracking-tight">All set!</h2>
+                <h2 className={`text-3xl md:text-4xl font-serif tracking-tight ${submitStatus === 'error' ? 'text-red-500' : ''}`}>
+                  {submitStatus === 'success' ? "All set!" : "Submission Failed"}
+                </h2>
                 <p className="text-white/40 text-sm leading-relaxed">
-                  We've received your inquiry. <br />
-                  We'll be in touch with you very soon.
+                  {submitStatus === 'success' 
+                    ? "We've received your inquiry. We'll be in touch with you very soon." 
+                    : "There was an error sending your inquiry. Please try again later."}
                 </p>
               </div>
 
               <button 
-                onClick={() => setIsSubmitted(false)}
-                className="w-full bg-white text-black py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-neutral-200 transition-all"
+                onClick={() => setSubmitStatus('idle')}
+                className={`w-full ${submitStatus === 'success' ? 'bg-white text-black hover:bg-neutral-200' : 'bg-red-500 text-white hover:bg-red-600'} py-5 text-[10px] uppercase tracking-[0.4em] font-bold transition-all`}
               >
-                Close
+                {submitStatus === 'success' ? "Close" : "Try Again"}
               </button>
             </motion.div>
           </div>
