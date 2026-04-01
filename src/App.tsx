@@ -122,12 +122,15 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 이동 후 메뉴를 닫고 스크롤 잠금을 해제하는 함수
   const scrollTo = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+    // 메뉴 닫기 및 스크롤 잠금 해제
     setIsMobileMenuOpen(false);
+    document.body.style.overflow = 'unset';
   };
 
   const navItemClass = (scrolled: boolean) => `text-[10px] uppercase tracking-[0.5em] font-medium hover:opacity-50 transition-opacity ${scrolled ? 'text-black' : 'text-white'}`;
@@ -142,7 +145,11 @@ const Navbar = () => {
         
         <div className="flex-shrink-0 text-center">
           <button 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              setIsMobileMenuOpen(false);
+              document.body.style.overflow = 'unset';
+            }}
             className="group focus:outline-none"
           >
             <h1 className={`text-xl md:text-2xl font-serif tracking-[0.2em] uppercase transition-all duration-700 ${isScrolled ? 'text-black' : 'text-white'} group-hover:opacity-60`}>
@@ -162,24 +169,16 @@ const Navbar = () => {
             className={`relative overflow-hidden ${navItemClass(isScrolled)} px-6 py-2.5 border ${isScrolled ? 'border-black/20' : 'border-white/30'} rounded-full transition-all duration-500`}
           >
             <span className="relative z-10">Inquiry</span>
-            <motion.div
-              animate={{
-                x: ['-100%', '200%'],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-                repeatDelay: 1
-              }}
-              className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-            />
           </motion.button>
         </div>
 
         <button 
           className={`md:hidden transition-colors ${isScrolled ? 'text-black' : 'text-white'}`}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onClick={() => {
+            const nextState = !isMobileMenuOpen;
+            setIsMobileMenuOpen(nextState);
+            document.body.style.overflow = nextState ? 'hidden' : 'unset';
+          }}
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -193,15 +192,9 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="absolute top-full left-0 w-full bg-white border-t border-black/5 py-10 px-6 flex flex-col gap-8 md:hidden shadow-2xl overflow-hidden"
           >
-            {['The Chef', 'Experiences', 'Inquiry'].map((item) => (
-              <button 
-                key={item} 
-                onClick={() => scrollTo(item.toLowerCase().replace(' ', ''))} 
-                className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center"
-              >
-                {item}
-              </button>
-            ))}
+            <button onClick={() => scrollTo('thechef')} className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center py-2">The Chef</button>
+            <button onClick={() => scrollTo('experiences')} className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center py-2">Experiences</button>
+            <button onClick={() => scrollTo('inquiry')} className="text-[10px] uppercase tracking-[0.5em] font-medium text-black text-center py-2">Inquiry</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -447,7 +440,6 @@ const ExperienceCard = ({ category, index }: { category: typeof EVENT_CATEGORIES
 const InquirySection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isError, setIsError] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -464,13 +456,12 @@ const InquirySection = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
     if (!selectedDate) {
       alert("Please select an event date.");
       return;
     }
     
-    const formData = new FormData(form);
+    const formData = new FormData(e.currentTarget);
     const data = {
       name: formData.get('name'),
       email: formData.get('email'),
@@ -497,12 +488,12 @@ const InquirySection = () => {
 
       setIsSubmitting(false);
       setIsSubmitted(true);
-      form.reset();
+      e.currentTarget.reset();
       setSelectedDate(undefined);
     } catch (error) {
       console.error("Error submitting inquiry:", error);
+      alert("There was an error sending your inquiry. Please try again later.");
       setIsSubmitting(false);
-      setIsError(true);
     }
   };
 
@@ -677,55 +668,6 @@ const InquirySection = () => {
                 className="w-full bg-white text-black py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-neutral-200 transition-all"
               >
                 Close
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Error Modal */}
-      <AnimatePresence>
-        {isError && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsError(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-neutral-900 border border-red-500/20 p-12 md:p-16 max-w-lg w-full text-center space-y-8 shadow-2xl"
-            >
-              <button 
-                onClick={() => setIsError(false)}
-                className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors"
-              >
-                <X size={24} />
-              </button>
-
-              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-
-              <div className="space-y-4">
-                <h2 className="text-3xl md:text-4xl font-serif tracking-tight text-red-500">Submission Failed</h2>
-                <p className="text-white/40 text-sm leading-relaxed">
-                  There was an error sending your inquiry. <br />
-                  Please try again later or contact us directly.
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setIsError(false)}
-                className="w-full bg-red-500 text-white py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-red-600 transition-all"
-              >
-                Try Again
               </button>
             </motion.div>
           </div>
