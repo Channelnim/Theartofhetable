@@ -122,85 +122,62 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 이동 로직 강화
   const scrollTo = (id: string) => {
-    // 1. 메뉴 닫기 및 스크롤 잠금 즉시 해제
     setIsMobileMenuOpen(false);
     document.body.style.overflow = 'unset';
 
-    // 2. 약간의 시간차를 두어 메뉴가 닫힌 후 이동하게 함 (모바일 충돌 방지)
     setTimeout(() => {
       const element = document.getElementById(id);
       if (element) {
-        const offset = 80; // 상단 바 높이만큼 여백
-        const bodyRect = document.body.getBoundingClientRect().top;
-        const elementRect = element.getBoundingClientRect().top;
-        const elementPosition = elementRect - bodyRect;
-        const offsetPosition = elementPosition - offset;
-
+        const offset = 100; // 헤더 높이만큼 여백
+        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
         window.scrollTo({
-          top: offsetPosition,
+          top: elementPosition - offset,
           behavior: 'smooth'
         });
       }
-    }, 100);
+    }, 150);
   };
-
-  const navItemClass = (scrolled: boolean) => `text-[10px] uppercase tracking-[0.5em] font-medium hover:opacity-50 transition-opacity ${scrolled ? 'text-black' : 'text-white'}`;
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 ${isScrolled ? 'bg-white/95 backdrop-blur-sm py-4 shadow-sm' : 'bg-transparent py-8'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        {/* 데스크탑 메뉴 */}
         <div className="flex-1 hidden md:flex gap-10">
-          <button onClick={() => scrollTo('thechef')} className={navItemClass(isScrolled)}>The Chef</button>
-          <button onClick={() => scrollTo('experiences')} className={navItemClass(isScrolled)}>Experiences</button>
+          <button onClick={() => scrollTo('thechef')} className={`text-[10px] uppercase tracking-[0.5em] font-medium transition-all ${isScrolled ? 'text-black' : 'text-white'}`}>The Chef</button>
+          <button onClick={() => scrollTo('experiences')} className={`text-[10px] uppercase tracking-[0.5em] font-medium transition-all ${isScrolled ? 'text-black' : 'text-white'}`}>Experiences</button>
         </div>
         
+        {/* 로고 */}
         <div className="flex-shrink-0 text-center">
-          <button 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="group focus:outline-none"
-          >
-            <h1 className={`text-xl md:text-2xl font-serif tracking-[0.2em] uppercase transition-all duration-700 ${isScrolled ? 'text-black' : 'text-white'} group-hover:opacity-60`}>
-              Chris Whirlow
-            </h1>
-            <p className={`text-[8px] uppercase tracking-[0.5em] mt-1 transition-all duration-700 ${isScrolled ? 'text-black/40' : 'text-white/60'} group-hover:opacity-60`}>
-              THE ART <span className="italic lowercase font-serif tracking-normal">of</span> THE TABLE
-            </p>
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="group focus:outline-none">
+            <h1 className={`text-xl md:text-2xl font-serif tracking-[0.2em] uppercase transition-all duration-700 ${isScrolled ? 'text-black' : 'text-white'}`}>Chris Whirlow</h1>
+            <p className={`text-[8px] uppercase tracking-[0.5em] mt-1 transition-all duration-700 ${isScrolled ? 'text-black/40' : 'text-white/60'}`}>THE ART of THE TABLE</p>
           </button>
         </div>
 
+        {/* 데스크탑 Inquiry 버튼 (물결 애니메이션 유지) */}
         <div className="flex-1 hidden md:flex justify-end items-center">
-          {/* ✨ 물결 애니메이션(btn-wavy) 클래스 다시 추가 */}
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button 
             onClick={() => scrollTo('inquiry')} 
-            className={`btn-wavy relative overflow-hidden ${navItemClass(isScrolled)} px-8 py-3 border ${isScrolled ? 'border-black/20 text-black' : 'border-white/30 text-white'} rounded-full`}
+            className={`btn-wavy px-8 py-3 rounded-full text-[10px] uppercase tracking-[0.3em] font-bold border transition-all ${isScrolled ? 'border-black/20 text-black' : 'border-white/30 text-white'}`}
           >
-            <span className="relative z-10">Inquiry</span>
-          </motion.button>
+            Inquiry
+          </button>
         </div>
 
-        <button 
-          className={`md:hidden transition-colors ${isScrolled ? 'text-black' : 'text-white'}`}
-          onClick={() => {
-            const nextState = !isMobileMenuOpen;
-            setIsMobileMenuOpen(nextState);
-            document.body.style.overflow = nextState ? 'hidden' : 'unset';
-          }}
-        >
+        {/* 모바일 햄버거 */}
+        <button className={`md:hidden ${isScrolled ? 'text-black' : 'text-white'}`} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
+      {/* 모바일 메뉴 */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 w-full bg-white border-t border-black/5 py-12 px-6 flex flex-col gap-10 md:hidden shadow-2xl"
+            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            className="absolute top-full left-0 w-full bg-white border-t py-12 px-6 flex flex-col gap-10 md:hidden shadow-2xl"
           >
             <button onClick={() => scrollTo('thechef')} className="text-[11px] uppercase tracking-[0.5em] font-bold text-black">The Chef</button>
             <button onClick={() => scrollTo('experiences')} className="text-[11px] uppercase tracking-[0.5em] font-bold text-black">Experiences</button>

@@ -82,3 +82,35 @@
 .btn-wavy:hover {
   animation: wave-animation 3s ease infinite;
 }
+.btn-wavy {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+  z-index: 1;
+}
+
+.btn-wavy::before {
+  content: '';
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  width: 150%;
+  height: 300%;
+  /* 아주 연한 회색/검정 톤으로 변경 */
+  background: rgba(0, 0, 0, 0.08); 
+  transition: all 0.8s ease;
+  transform: translateX(-50%);
+  border-radius: 40%;
+  z-index: -1;
+}
+
+.btn-wavy:hover {
+  /* 글자가 물결에 묻히지 않도록 선명하게 처리 */
+  color: #000 !important; 
+  opacity: 1 !important;
+}
+
+.btn-wavy:hover::before {
+  top: -100%;
+  transform: translateX(-50%) rotate(360deg);
+}
