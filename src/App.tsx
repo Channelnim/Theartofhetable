@@ -18,6 +18,7 @@ import {
   LucideIcon,
   Calendar as CalendarIcon
 } from 'lucide-react';
+import { data } from 'motion/react-m';
 
 // --- Constants & Data ---
 
@@ -476,21 +477,14 @@ const InquirySection = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
     if (!selectedDate) {
       alert("Please select an event date.");
       return;
     }
     
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      name: formData.get('name'),
-      email: formData.get('email'),
-      phone: formData.get('phone'),
-      date: format(selectedDate, 'PPP'),
-      type: formData.get('type'),
-      vision: formData.get('vision')
-    };
-
+    // 이 부분을 추가하여 새로운 전송 시작 시 이전 상태를 초기화합니다.
+    setIsSubmitted(false);
     setIsSubmitting(true);
     
     try {
